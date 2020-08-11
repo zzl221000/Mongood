@@ -40,42 +40,35 @@ function PlainCard(props: { value: TableCellItem; index2dsphere?: MongoData }) {
   )
 }
 
-export const TableCell = React.memo(
-  function TableCell(props: {
-    value: TableCellItem
-    index2dsphere?: MongoData
-  }) {
-    const theme = getTheme()
-    const html = useColorize(props.value.str)
-    const onRenderPlainCard = useCallback(() => {
-      return (
-        <PlainCard value={props.value} index2dsphere={props.index2dsphere} />
-      )
-    }, [props.value, props.index2dsphere])
+export function TableCell(props: {
+  value: TableCellItem
+  index2dsphere?: MongoData
+}) {
+  const theme = getTheme()
+  const html = useColorize(props.value.str)
+  const onRenderPlainCard = useCallback(() => {
+    return <PlainCard value={props.value} index2dsphere={props.index2dsphere} />
+  }, [props.value, props.index2dsphere])
 
-    return (
-      <HoverCard
-        type={HoverCardType.plain}
-        plainCardProps={{
-          onRenderPlainCard,
-        }}
-        styles={{
-          host: {
-            cursor: 'pointer',
-            color: theme.palette.neutralSecondary,
-            textOverflow: 'ellipsis',
-            overflow: 'hidden',
-          },
-        }}
-        instantOpenOnClick={true}>
-        <span
-          style={{ verticalAlign: 'middle' }}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-      </HoverCard>
-    )
-  },
-  (prevProps, nextProps) =>
-    prevProps.value === nextProps.value &&
-    prevProps.index2dsphere === nextProps.index2dsphere,
-)
+  return (
+    <HoverCard
+      type={HoverCardType.plain}
+      plainCardProps={{
+        onRenderPlainCard,
+      }}
+      styles={{
+        host: {
+          cursor: 'pointer',
+          color: theme.palette.neutralSecondary,
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+        },
+      }}
+      instantOpenOnClick={true}>
+      <span
+        style={{ verticalAlign: 'middle' }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </HoverCard>
+  )
+}
