@@ -18,6 +18,7 @@ export type TableRowItem = {
   doc: {
     [key: string]: TableCellItem
   }
+  str: string
 }
 
 export function calcHeaders(
@@ -55,5 +56,6 @@ export function preprocessItems(
       raw,
       str: stringifyInner(raw, false, tabSize, timezoneOffset, extraSpaces),
     })),
+    str: stringifyInner(item, true, tabSize, timezoneOffset, extraSpaces),
   }))
 }

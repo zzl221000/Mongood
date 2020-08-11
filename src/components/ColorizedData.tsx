@@ -10,8 +10,12 @@ import { useColorize } from '@/hooks/use-colorize'
 export function ColorizedData(props: {
   style?: CSSProperties
   value: MongoData
+  str?: string
 }) {
-  const str = useMemo(() => stringify(props.value, true), [props.value])
+  const str = useMemo(() => props.str || stringify(props.value, true), [
+    props.value,
+    props.str,
+  ])
   const html = useColorize(str)
   const theme = getTheme()
 
