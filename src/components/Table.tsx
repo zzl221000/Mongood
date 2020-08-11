@@ -84,6 +84,10 @@ export function Table(props: {
       return cell ? (
         <TableCell
           value={cell}
+          subStringLength={
+            // eslint-disable-next-line no-bitwise
+            column?.currentWidth ? undefined : column?.minWidth! >> 2
+          }
           index2dsphere={
             item &&
             props.index2dsphere &&
