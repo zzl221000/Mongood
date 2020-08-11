@@ -98,7 +98,7 @@ export function Table(props: {
     [props.index2dsphere],
   )
   const onRenderDocumentItemColumn = useCallback(
-    (item) => <ColorizedData value={item} />,
+    (item?: TableRowItem) => <ColorizedData value={item?.raw} />,
     [],
   )
   const handleGetKey = useCallback((item: TableRowItem) => {
