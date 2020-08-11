@@ -24,20 +24,12 @@ function wrapKey(key: string) {
   return key
 }
 
-const tabSize = parseInt(localStorage.getItem(TAB_SIZE_KEY) || '2', 10)
-
-const timezoneOffset = parseInt(
-  localStorage.getItem(TIMEZONE_OFFSET_KEY) || '0',
-  10,
-)
-
-const extraSpaces = Array.from({ length: tabSize })
-  .map(() => ' ')
-  .join('')
-
-export function stringify(
+export function stringifyInner(
   val: MongoData,
   hasIndent = false,
+  tabSize: number,
+  timezoneOffset: number,
+  extraSpaces: string,
   depth = 0,
 ): string {
   if (typeof val === 'string') {
@@ -102,7 +94,17 @@ export function stringify(
   if (Array.isArray(val)) {
     if (!hasIndent) {
       return `[${val
-        .map((v) => `${stringify(v, hasIndent, depth + tabSize)}`)
+        .map(
+          (v) =>
+            `${stringifyInner(
+              v,
+              hasIndent,
+              tabSize,
+              timezoneOffset,
+              extraSpaces,
+              depth + tabSize,
+            )}`,
+        )
         .join(', ')}]`
     }
     const spaces = Array.from({ length: depth })
@@ -112,9 +114,12 @@ export function stringify(
       ? `[\n${val
           .map(
             (v) =>
-              `${extraSpaces}${spaces}${stringify(
+              `${extraSpaces}${spaces}${stringifyInner(
                 v,
                 hasIndent,
+                tabSize,
+                timezoneOffset,
+                extraSpaces,
                 depth + tabSize,
               )}`,
           )
@@ -129,7 +134,14 @@ export function stringify(
     return `{ ${entries
       .map(
         ([key, value]) =>
-          `${wrapKey(key)}: ${stringify(value, hasIndent, depth + tabSize)}`,
+          `${wrapKey(key)}: ${stringifyInner(
+            value,
+            hasIndent,
+            tabSize,
+            timezoneOffset,
+            extraSpaces,
+            depth + tabSize,
+          )}`,
       )
       .join(', ')} }`
   }
@@ -139,13 +151,40 @@ export function stringify(
   return `{\n${entries
     .map(
       ([key, value]) =>
-        `${extraSpaces}${spaces}${wrapKey(key)}: ${stringify(
+        `${extraSpaces}${spaces}${wrapKey(key)}: ${stringifyInner(
           value,
           hasIndent,
+          tabSize,
+          timezoneOffset,
+          extraSpaces,
           depth + tabSize,
         )}`,
     )
     .join(',\n')}\n${spaces}}`
+}
+
+export function stringify(
+  val: MongoData,
+  hasIndent = false,
+  depth = 0,
+): string {
+  const tabSize = parseInt(localStorage.getItem(TAB_SIZE_KEY) || '2', 10)
+  const timezoneOffset = parseInt(
+    localStorage.getItem(TIMEZONE_OFFSET_KEY) || '0',
+    10,
+  )
+  const extraSpaces = Array.from({ length: tabSize })
+    .map(() => ' ')
+    .join('')
+
+  return stringifyInner(
+    val,
+    hasIndent,
+    tabSize,
+    timezoneOffset,
+    extraSpaces,
+    depth,
+  )
 }
 
 export const sandbox = {

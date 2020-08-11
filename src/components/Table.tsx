@@ -79,18 +79,22 @@ export function Table(props: {
     [isValidating, theme],
   )
   const onRenderTableItemColumn = useCallback(
-    (item: TableRowItem, _index?: number, column?: IColumn) => (
-      <TableCell
-        value={item.doc[column?.key as keyof typeof item]}
-        index2dsphere={
-          props.index2dsphere &&
-          column?.key &&
-          props.index2dsphere.startsWith(column?.key)
-            ? get(item, props.index2dsphere)
-            : undefined
-        }
-      />
-    ),
+    (item?: TableRowItem, _index?: number, column?: IColumn) => {
+      const cell = item?.doc[column?.key as keyof typeof item]
+      return cell ? (
+        <TableCell
+          value={cell}
+          index2dsphere={
+            item &&
+            props.index2dsphere &&
+            column?.key &&
+            props.index2dsphere.startsWith(column?.key)
+              ? get(item.raw, props.index2dsphere)
+              : undefined
+          }
+        />
+      ) : null
+    },
     [props.index2dsphere],
   )
   const onRenderDocumentItemColumn = useCallback(

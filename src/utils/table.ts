@@ -3,7 +3,7 @@
 import { sortBy, mapValues } from 'lodash'
 
 import { MongoData } from '@/types'
-import { stringify } from './ejson'
+import { stringifyInner } from './ejson'
 
 export type TableCellItem = {
   raw: MongoData
@@ -42,12 +42,18 @@ export function calcHeaders(
     .map(([k, { minWidth }]) => ({ key: k, minWidth }))
 }
 
-export function preprecessItems(
+export function preprocessItems(
   items: { [key: string]: MongoData }[],
+  tabSize: number,
+  timezoneOffset: number,
+  extraSpaces: string,
 ): TableRowItem[] {
   return items.map((item, index) => ({
     key: item._id ? JSON.stringify(item._id) : JSON.stringify(item) + index,
     raw: item,
-    doc: mapValues(item, (raw) => ({ raw, str: stringify(raw) })),
+    doc: mapValues(item, (raw) => ({
+      raw,
+      str: stringifyInner(raw, false, tabSize, timezoneOffset, extraSpaces),
+    })),
   }))
 }

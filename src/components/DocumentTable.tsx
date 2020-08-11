@@ -3,12 +3,16 @@ import useSWR from 'swr'
 import { useSelector, useDispatch } from 'react-redux'
 import { isEmpty } from 'lodash'
 import { Selection } from '@fluentui/react'
+import useAsyncEffect from 'use-async-effect'
+import { spawn, Thread, Worker, FunctionThread } from 'threads'
 
 import { runCommand } from '@/utils/fetcher'
 import { stringify } from '@/utils/ejson'
 import { actions } from '@/stores'
 import { MongoData } from '@/types'
-import { TableRowItem, preprecessItems } from '@/utils/table'
+import { TableRowItem } from '@/utils/table'
+import type { preprocessItems as PreprocessItems } from '@/utils/table'
+import { TAB_SIZE_KEY, TIMEZONE_OFFSET_KEY } from '@/pages/settings'
 import { Table } from './Table'
 import { EditorModal } from './EditorModal'
 import { ActionButton } from './ActionButton'
@@ -101,9 +105,55 @@ export function DocumentTable() {
     ],
     [index],
   )
-  const items = useMemo(
-    () => (data ? preprecessItems(data.cursor.firstBatch) : undefined),
-    [data],
+  const [items, setItems] = useState<TableRowItem[]>()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const preprocessItems = useRef<
+    FunctionThread<Parameters<typeof PreprocessItems>>
+  >()
+  useAsyncEffect(
+    async () => {
+      preprocessItems.current = await spawn<typeof PreprocessItems>(
+        new Worker('../workers/preprocess-items'),
+      )
+    },
+    () => {
+      if (preprocessItems.current) {
+        Thread.terminate(preprocessItems.current)
+      }
+    },
+    [],
+  )
+  useAsyncEffect(
+    async (isMounted) => {
+      try {
+        if (!data || !preprocessItems.current) {
+          return undefined
+        }
+        setIsProcessing(true)
+        setItems(undefined)
+        const tabSize = parseInt(localStorage.getItem(TAB_SIZE_KEY) || '2', 10)
+        const timezoneOffset = parseInt(
+          localStorage.getItem(TIMEZONE_OFFSET_KEY) || '0',
+          10,
+        )
+        const extraSpaces = Array.from({ length: tabSize })
+          .map(() => ' ')
+          .join('')
+        const _items = await preprocessItems.current(
+          data.cursor.firstBatch,
+          tabSize,
+          timezoneOffset,
+          extraSpaces,
+        )
+        if (isMounted()) {
+          setItems(_items)
+        }
+        return preprocessItems
+      } finally {
+        setIsProcessing(false)
+      }
+    },
+    [data, preprocessItems.current],
   )
 
   return (
@@ -146,7 +196,7 @@ export function DocumentTable() {
         items={items}
         order={order}
         error={error}
-        isValidating={isValidating}
+        isValidating={isProcessing || isValidating}
         onItemInvoked={onItemInvoked}
         onItemContextMenu={onItemContextMenu}
         selection={selection}
