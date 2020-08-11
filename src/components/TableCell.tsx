@@ -50,7 +50,7 @@ export function TableCell(props: {
     return <PlainCard value={props.value} index2dsphere={props.index2dsphere} />
   }, [props.value, props.index2dsphere])
 
-  return (
+  return props.value.str.length > 36 ? (
     <HoverCard
       type={HoverCardType.plain}
       plainCardProps={{
@@ -70,5 +70,10 @@ export function TableCell(props: {
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </HoverCard>
+  ) : (
+    <span
+      style={{ verticalAlign: 'middle' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   )
 }
