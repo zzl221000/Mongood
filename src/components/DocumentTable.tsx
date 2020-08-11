@@ -8,12 +8,11 @@ import { runCommand } from '@/utils/fetcher'
 import { stringify } from '@/utils/ejson'
 import { actions } from '@/stores'
 import { MongoData } from '@/types'
+import { TableRowItem, preprecessItems } from '@/utils/table'
 import { Table } from './Table'
 import { EditorModal } from './EditorModal'
 import { ActionButton } from './ActionButton'
 import { DocumentContextualMenu } from './DocumentContextualMenu'
-
-type Data = { [key: string]: MongoData }
 
 export function DocumentTable() {
   const connection = useSelector((state) => state.root.connection)
@@ -35,7 +34,7 @@ export function DocumentTable() {
       : null,
     () =>
       runCommand<{
-        cursor: { firstBatch: Data[] }
+        cursor: { firstBatch: { [key: string]: MongoData }[] }
       }>(
         connection,
         database!,
@@ -54,30 +53,30 @@ export function DocumentTable() {
   const dispatch = useDispatch()
   const [isUpdateOpen, setIsUpdateOpen] = useState(false)
   const [isMenuHidden, setIsMenuHidden] = useState(true)
-  const [invokedItem, setInvokedItem] = useState<Data>()
-  const [editedItem, setEditedItem] = useState<Data>()
+  const [invokedItem, setInvokedItem] = useState<TableRowItem>()
+  const [editedItem, setEditedItem] = useState<TableRowItem['raw']>()
   const handleUpdate = useCallback(async () => {
     await runCommand(connection, database!, {
       findAndModify: collection,
-      query: { _id: (invokedItem as { _id: unknown })._id },
+      query: { _id: invokedItem?.raw._id },
       update: editedItem,
     })
     dispatch(actions.docs.setTrigger())
     setIsUpdateOpen(false)
   }, [connection, database, collection, invokedItem, editedItem, dispatch])
   const target = useRef<MouseEvent>()
-  const selectedItems = useRef<Data[]>([])
+  const selectedItems = useRef<TableRowItem[]>([])
   const selection = useMemo(
     () =>
       new Selection({
         onSelectionChanged() {
-          selectedItems.current = selection.getSelection() as Data[]
+          selectedItems.current = selection.getSelection() as TableRowItem[]
         },
       }),
     [],
   )
-  const title = useMemo(() => stringify(invokedItem?._id), [invokedItem])
-  const onItemInvoked = useCallback((item: Data) => {
+  const title = useMemo(() => stringify(invokedItem?.raw._id), [invokedItem])
+  const onItemInvoked = useCallback((item: TableRowItem) => {
     setInvokedItem(item)
     setIsUpdateOpen(true)
   }, [])
@@ -102,12 +101,16 @@ export function DocumentTable() {
     ],
     [index],
   )
+  const items = useMemo(
+    () => (data ? preprecessItems(data.cursor.firstBatch) : undefined),
+    [data],
+  )
 
   return (
     <>
-      <EditorModal<Data>
+      <EditorModal<TableRowItem['raw']>
         title={title}
-        value={invokedItem}
+        value={invokedItem?.raw}
         onChange={setEditedItem}
         isOpen={isUpdateOpen}
         onDismiss={() => {
@@ -140,7 +143,7 @@ export function DocumentTable() {
       />
       <Table
         displayMode={displayMode}
-        items={data?.cursor.firstBatch}
+        items={items}
         order={order}
         error={error}
         isValidating={isValidating}

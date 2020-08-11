@@ -19,18 +19,18 @@ import {
 } from '@fluentui/react'
 import { get } from 'lodash'
 
-import { DisplayMode, MongoData } from '@/types.d'
-import { calcHeaders } from '@/utils/table'
+import { DisplayMode } from '@/types.d'
+import { calcHeaders, TableRowItem } from '@/utils/table'
 import { TableCell } from './TableCell'
 import { LargeMessage } from './LargeMessage'
 import { ColorizedData } from './ColorizedData'
 
-export function Table<T extends { [key: string]: MongoData }>(props: {
+export function Table(props: {
   displayMode?: DisplayMode
-  items?: T[]
+  items?: TableRowItem[]
   order?: string[]
-  onItemInvoked?(item: T): void
-  onItemContextMenu?(ev?: MouseEvent, item?: T): void
+  onItemInvoked?(item: TableRowItem): void
+  onItemContextMenu?(ev?: MouseEvent, item?: TableRowItem): void
   selection?: Selection
   error?: Error
   isValidating: boolean
@@ -79,13 +79,9 @@ export function Table<T extends { [key: string]: MongoData }>(props: {
     [isValidating, theme],
   )
   const onRenderTableItemColumn = useCallback(
-    (item?: T, _index?: number, column?: IColumn) => (
+    (item: TableRowItem, _index?: number, column?: IColumn) => (
       <TableCell
-        value={item?.[column?.key as keyof typeof item]}
-        subStringLength={
-          // eslint-disable-next-line no-bitwise
-          column?.currentWidth ? undefined : column?.minWidth! >> 2
-        }
+        value={item.doc[column?.key as keyof typeof item]}
         index2dsphere={
           props.index2dsphere &&
           column?.key &&
@@ -101,8 +97,8 @@ export function Table<T extends { [key: string]: MongoData }>(props: {
     (item) => <ColorizedData value={item} />,
     [],
   )
-  const handleGetKey = useCallback((item: T, index?: number) => {
-    return item._id ? JSON.stringify(item._id) : JSON.stringify(item) + index
+  const handleGetKey = useCallback((item: TableRowItem) => {
+    return item.key
   }, [])
 
   if (error) {

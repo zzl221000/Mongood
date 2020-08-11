@@ -14,7 +14,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { stringify } from '@/utils/ejson'
 import { runCommand } from '@/utils/fetcher'
 import { actions } from '@/stores'
-import { calcHeaders } from '@/utils/table'
+import { calcHeaders, TableRowItem } from '@/utils/table'
 import { MongoData } from '@/types'
 
 const cast: Options['cast'] = {
@@ -25,13 +25,11 @@ const cast: Options['cast'] = {
   string: (value) => stringify(value),
 }
 
-export function DocumentContextualMenu<
-  T extends { [key: string]: MongoData }
->(props: {
+export function DocumentContextualMenu(props: {
   hidden: boolean
   onDismiss(): void
   target?: MouseEvent
-  selectedItems: T[]
+  selectedItems: TableRowItem[]
   onEdit?(): void
 }) {
   const connection = useSelector((state) => state.root.connection)
@@ -67,6 +65,7 @@ export function DocumentContextualMenu<
   useEffect(() => {
     setIsSucceed(undefined)
   }, [props.target])
+  const selectedItems = props.selectedItems.map((item) => item.raw)
 
   return (
     <>
@@ -75,12 +74,10 @@ export function DocumentContextualMenu<
         dialogContentProps={{
           type: DialogType.normal,
           title:
-            props.selectedItems.length === 1
+            selectedItems.length === 1
               ? 'Delete Document'
-              : `Delete ${props.selectedItems.length} Documents`,
-          subText: props.selectedItems
-            .map((item) => stringify(item._id))
-            .join('\n'),
+              : `Delete ${selectedItems.length} Documents`,
+          subText: selectedItems.map((item) => stringify(item._id)).join('\n'),
           showCloseButton: true,
           isMultiline: true,
           styles: {
@@ -115,7 +112,7 @@ export function DocumentContextualMenu<
               }[String(isSucceed) as 'true' | 'false']
             }
             onClick={() => {
-              handleDelete(props.selectedItems.map((item) => item._id))
+              handleDelete(selectedItems.map((item) => item._id))
             }}
             text="Delete"
           />
@@ -142,12 +139,10 @@ export function DocumentContextualMenu<
                 {
                   key: '1-0',
                   text: '_id',
-                  disabled:
-                    props.selectedItems.length !== 1 ||
-                    !props.selectedItems[0]._id,
+                  disabled: selectedItems.length !== 1 || !selectedItems[0]._id,
                   onClick() {
                     window.navigator.clipboard.writeText(
-                      stringify(props.selectedItems[0]._id),
+                      stringify(selectedItems[0]._id),
                     )
                   },
                 },
@@ -157,9 +152,9 @@ export function DocumentContextualMenu<
                   secondaryText: 'array',
                   onClick() {
                     window.navigator.clipboard.writeText(
-                      props.selectedItems.length === 1
-                        ? stringify(props.selectedItems[0], true)
-                        : stringify(props.selectedItems, true),
+                      selectedItems.length === 1
+                        ? stringify(selectedItems[0], true)
+                        : stringify(selectedItems, true),
                     )
                   },
                 },
@@ -169,9 +164,7 @@ export function DocumentContextualMenu<
                   secondaryText: 'line',
                   onClick() {
                     window.navigator.clipboard.writeText(
-                      props.selectedItems
-                        .map((item) => stringify(item))
-                        .join('\n'),
+                      selectedItems.map((item) => stringify(item)).join('\n'),
                     )
                   },
                 },
@@ -181,9 +174,9 @@ export function DocumentContextualMenu<
                   secondaryText: 'array',
                   onClick() {
                     window.navigator.clipboard.writeText(
-                      props.selectedItems.length === 1
-                        ? JSON.stringify(props.selectedItems[0], null, 2)
-                        : JSON.stringify(props.selectedItems, null, 2),
+                      selectedItems.length === 1
+                        ? JSON.stringify(selectedItems[0], null, 2)
+                        : JSON.stringify(selectedItems, null, 2),
                     )
                   },
                 },
@@ -193,7 +186,7 @@ export function DocumentContextualMenu<
                   secondaryText: 'line',
                   onClick() {
                     window.navigator.clipboard.writeText(
-                      props.selectedItems
+                      selectedItems
                         .map((item) => JSON.stringify(item))
                         .join('\n'),
                     )
@@ -204,7 +197,7 @@ export function DocumentContextualMenu<
                   text: 'as CSV',
                   secondaryText: 'without header',
                   onClick() {
-                    csv(props.selectedItems, { cast }, (_err, text) => {
+                    csv(selectedItems, { cast }, (_err, text) => {
                       if (text) {
                         window.navigator.clipboard.writeText(text)
                       }
@@ -216,15 +209,11 @@ export function DocumentContextualMenu<
                   text: 'as CSV',
                   secondaryText: 'with header',
                   onClick() {
-                    csv(
-                      props.selectedItems,
-                      { header: true, cast },
-                      (_err, text) => {
-                        if (text) {
-                          window.navigator.clipboard.writeText(text)
-                        }
-                      },
-                    )
+                    csv(selectedItems, { header: true, cast }, (_err, text) => {
+                      if (text) {
+                        window.navigator.clipboard.writeText(text)
+                      }
+                    })
                   },
                 },
                 {
@@ -235,7 +224,7 @@ export function DocumentContextualMenu<
                     window.navigator.clipboard.writeText(
                       table([
                         headers.map(({ key }) => key),
-                        ...props.selectedItems.map((item) =>
+                        ...selectedItems.map((item) =>
                           headers.map(({ key }) => stringify(item[key])),
                         ),
                       ]),

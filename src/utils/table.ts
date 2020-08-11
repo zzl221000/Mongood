@@ -1,25 +1,37 @@
 /* eslint-disable no-bitwise */
 
-import { sortBy } from 'lodash'
+import { sortBy, mapValues } from 'lodash'
 
 import { MongoData } from '@/types'
 import { stringify } from './ejson'
 
-export function calcHeaders<T extends { [key: string]: MongoData }>(
-  items: T[],
+export type TableCellItem = {
+  raw: MongoData
+  str: string
+}
+
+export type TableRowItem = {
+  key: string
+  raw: {
+    [key: string]: MongoData
+  }
+  doc: {
+    [key: string]: TableCellItem
+  }
+}
+
+export function calcHeaders(
+  items: TableRowItem[],
   order?: string[],
 ): { key: string; minWidth: number }[] {
   const keys: { [key: string]: { order: number; minWidth: number } } = {}
   items.forEach((item) => {
-    Object.keys(item).forEach((key) => {
+    Object.keys(item.doc).forEach((key) => {
       if (!keys[key] && order) {
         const index = order.indexOf(key)
         keys[key] = {
           order: index >= 0 ? (order.length - index) << 10 : 0,
-          minWidth: Math.max(
-            100,
-            Math.min(240, stringify(item[key]).length << 3),
-          ),
+          minWidth: Math.max(100, Math.min(240, item.doc[key].str.length << 3)),
         }
       }
       keys[key].order += 1
@@ -28,4 +40,14 @@ export function calcHeaders<T extends { [key: string]: MongoData }>(
   return sortBy(Object.entries(keys), (k) => k[1].order)
     .reverse()
     .map(([k, { minWidth }]) => ({ key: k, minWidth }))
+}
+
+export function preprecessItems(
+  items: { [key: string]: MongoData }[],
+): TableRowItem[] {
+  return items.map((item, index) => ({
+    key: item._id ? JSON.stringify(item._id) : JSON.stringify(item) + index,
+    raw: item,
+    doc: mapValues(item, (raw) => ({ raw, str: stringify(raw) })),
+  }))
 }
