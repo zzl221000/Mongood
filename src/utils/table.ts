@@ -8,6 +8,7 @@ import { stringifyInner } from './ejson'
 export type TableCellItem = {
   raw: MongoData
   str: string
+  short: string
 }
 
 export type TableRowItem = {
@@ -52,10 +53,20 @@ export function preprocessItems(
   return items.map((item, index) => ({
     key: item._id ? JSON.stringify(item._id) : JSON.stringify(item) + index,
     raw: item,
-    doc: mapValues(item, (raw) => ({
-      raw,
-      str: stringifyInner(raw, false, tabSize, timezoneOffset, extraSpaces),
-    })),
+    doc: mapValues(item, (raw) => {
+      const str = stringifyInner(
+        raw,
+        false,
+        tabSize,
+        timezoneOffset,
+        extraSpaces,
+      )
+      return {
+        raw,
+        str,
+        short: str.substr(0, 80),
+      }
+    }),
     str: stringifyInner(item, true, tabSize, timezoneOffset, extraSpaces),
   }))
 }

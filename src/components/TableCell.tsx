@@ -43,11 +43,11 @@ function PlainCard(props: { value: TableCellItem; index2dsphere?: MongoData }) {
 export const TableCell = React.memo(
   function TableCell(props: {
     value: TableCellItem
-    subStringLength?: number
+    short: boolean
     index2dsphere?: MongoData
   }) {
     const theme = getTheme()
-    const html = useColorize(props.value.str.substr(0, props.subStringLength))
+    const html = useColorize(props.short ? props.value.short : props.value.str)
     const onRenderPlainCard = useCallback(() => {
       return (
         <PlainCard value={props.value} index2dsphere={props.index2dsphere} />
@@ -83,6 +83,6 @@ export const TableCell = React.memo(
   },
   (prevProps, nextProps) =>
     prevProps.value === nextProps.value &&
-    prevProps.subStringLength === nextProps.subStringLength &&
+    prevProps.short === nextProps.short &&
     prevProps.index2dsphere === nextProps.index2dsphere,
 )
